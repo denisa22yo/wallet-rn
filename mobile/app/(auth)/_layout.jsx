@@ -1,5 +1,6 @@
 import { Redirect, Stack } from "expo-router";
 import { useAuth } from "@clerk/clerk-expo";
+import { StatusBar } from "react-native";
 
 export default function AuthRoutesLayout() {
   const { isSignedIn } = useAuth();
@@ -8,5 +9,10 @@ export default function AuthRoutesLayout() {
     return <Redirect href={"/"} />;
   }
 
-  return <Stack />;
+  return (
+    <>
+      <StatusBar style="auto" />
+      <Stack screenOptions={{ headerShown: false }} />
+    </>
+  );
 }

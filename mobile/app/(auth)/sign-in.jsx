@@ -1,99 +1,100 @@
-import { useSignIn } from '@clerk/clerk-expo'
-import type { EmailCodeFactor } from '@clerk/types'
-import { Link, useRouter } from 'expo-router'
-import * as React from 'react'
-import { Pressable, StyleSheet, TextInput, View, Text } from 'react-native'
+import { useSignIn } from "@clerk/clerk-expo";
+// import type { EmailCodeFactor } from '@clerk/types'
+import { Link, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import { Pressable, TextInput, View, Text } from "react-native";
+import { styles } from "@/assets/styles/auth.styles.js";
 
 export default function Page() {
-  const { signIn, setActive, isLoaded } = useSignIn()
-  const router = useRouter()
+  const { signIn, setActive, isLoaded } = useSignIn();
+  const router = useRouter();
 
-  const [emailAddress, setEmailAddress] = React.useState('')
-  const [password, setPassword] = React.useState('')
-  const [code, setCode] = React.useState('')
-  const [showEmailCode, setShowEmailCode] = React.useState(false)
+  const [emailAddress, setEmailAddress] = useState("");
+  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [showEmailCode, setShowEmailCode] = useState(false);
 
   // Handle the submission of the sign-in form
-  const onSignInPress = React.useCallback(async () => {
-    if (!isLoaded) return
+  const onSignInPress = useCallback(async () => {
+    if (!isLoaded) return;
 
     // Start the sign-in process using the email and password provided
     try {
       const signInAttempt = await signIn.create({
         identifier: emailAddress,
         password,
-      })
+      });
 
       // If sign-in process is complete, set the created session as active
       // and redirect the user
-      if (signInAttempt.status === 'complete') {
+      if (signInAttempt.status === "complete") {
         await setActive({
           session: signInAttempt.createdSessionId,
           navigate: async ({ session }) => {
             if (session?.currentTask) {
               // Check for tasks and navigate to custom UI to help users resolve them
-              console.log(session?.currentTask)
-              return
+              console.log(session?.currentTask);
+              return;
             }
 
-            router.replace('/')
+            router.replace("/");
           },
-        })
-      } else if (signInAttempt.status === 'needs_second_factor') {
+        });
+      } else if (signInAttempt.status === "needs_second_factor") {
         // Check if email_code is a valid second factor
         // This is required when Client Trust is enabled and the user
         // is signing in from a new device.
         const emailCodeFactor = signInAttempt.supportedSecondFactors?.find(
-          (factor): factor is EmailCodeFactor => factor.strategy === 'email_code',
-        )
+          (factor) => factor.strategy === "email_code",
+        );
 
         if (emailCodeFactor) {
           await signIn.prepareSecondFactor({
-            strategy: 'email_code',
+            strategy: "email_code",
             emailAddressId: emailCodeFactor.emailAddressId,
-          })
-          setShowEmailCode(true)
+          });
+          setShowEmailCode(true);
         }
       } else {
         // If the status is not complete, check why. User may need to
         // complete further steps.
-        console.error(JSON.stringify(signInAttempt, null, 2))
+        console.error(JSON.stringify(signInAttempt, null, 2));
       }
     } catch (err) {
-      console.error(JSON.stringify(err, null, 2))
+      console.error(JSON.stringify(err, null, 2));
     }
-  }, [isLoaded, signIn, setActive, router, emailAddress, password])
+  }, [isLoaded, signIn, setActive, router, emailAddress, password]);
 
   // Handle the submission of the email verification code
-  const onVerifyPress = React.useCallback(async () => {
-    if (!isLoaded) return
+  const onVerifyPress = useCallback(async () => {
+    if (!isLoaded) return;
 
     try {
       const signInAttempt = await signIn.attemptSecondFactor({
-        strategy: 'email_code',
+        strategy: "email_code",
         code,
-      })
+      });
 
-      if (signInAttempt.status === 'complete') {
+      if (signInAttempt.status === "complete") {
         await setActive({
           session: signInAttempt.createdSessionId,
           navigate: async ({ session }) => {
             if (session?.currentTask) {
               // Check for tasks and navigate to custom UI to help users resolve them
-              console.log(session?.currentTask)
-              return
+              console.log(session?.currentTask);
+              return;
             }
 
-            router.replace('/')
+            router.replace("/");
           },
-        })
+        });
       } else {
-        console.error(JSON.stringify(signInAttempt, null, 2))
+        console.error(JSON.stringify(signInAttempt, null, 2));
       }
     } catch (err) {
-      console.error(JSON.stringify(err, null, 2))
+      console.error(JSON.stringify(err, null, 2));
     }
-  }, [isLoaded, signIn, setActive, router, code])
+  }, [isLoaded, signIn, setActive, router, code]);
 
   // Display email code verification form
   if (showEmailCode) {
@@ -114,13 +115,16 @@ export default function Page() {
           keyboardType="numeric"
         />
         <Pressable
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          style={({ pressed }) => [
+            styles.button,
+            pressed && styles.buttonPressed,
+          ]}
           onPress={onVerifyPress}
         >
-          <ThemedText style={styles.buttonText}>Verify</ThemedText>
+          <Text style={styles.buttonText}>Verify</Text>
         </Pressable>
       </View>
-    )
+    );
   }
 
   return (
@@ -159,63 +163,63 @@ export default function Page() {
         <Text style={styles.buttonText}>Sign in</Text>
       </Pressable>
       <View style={styles.linkContainer}>
-        <Text>Don't have an account? </Text>
+        <Text>Don&apos;t have an account?</Text>
         <Link href="/sign-up">
           <Text type="link">Sign up</Text>
         </Link>
       </View>
     </View>
-  )
+  );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    gap: 12,
-  },
-  title: {
-    marginBottom: 8,
-  },
-  description: {
-    fontSize: 14,
-    marginBottom: 16,
-    opacity: 0.8,
-  },
-  label: {
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
-  },
-  button: {
-    backgroundColor: '#0a7ea4',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonPressed: {
-    opacity: 0.7,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  linkContainer: {
-    flexDirection: 'row',
-    gap: 4,
-    marginTop: 12,
-    alignItems: 'center',
-  },
-})
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     padding: 20,
+//     gap: 12,
+//   },
+//   title: {
+//     marginBottom: 8,
+//   },
+//   description: {
+//     fontSize: 14,
+//     marginBottom: 16,
+//     opacity: 0.8,
+//   },
+//   label: {
+//     fontWeight: "600",
+//     fontSize: 14,
+//   },
+//   input: {
+//     borderWidth: 1,
+//     borderColor: "#ccc",
+//     borderRadius: 8,
+//     padding: 12,
+//     fontSize: 16,
+//     backgroundColor: "#fff",
+//   },
+//   button: {
+//     backgroundColor: "#0a7ea4",
+//     paddingVertical: 12,
+//     paddingHorizontal: 24,
+//     borderRadius: 8,
+//     alignItems: "center",
+//     marginTop: 8,
+//   },
+//   buttonPressed: {
+//     opacity: 0.7,
+//   },
+//   buttonDisabled: {
+//     opacity: 0.5,
+//   },
+//   buttonText: {
+//     color: "#fff",
+//     fontWeight: "600",
+//   },
+//   linkContainer: {
+//     flexDirection: "row",
+//     gap: 4,
+//     marginTop: 12,
+//     alignItems: "center",
+//   },
+// });
