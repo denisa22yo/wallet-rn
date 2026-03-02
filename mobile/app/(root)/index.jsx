@@ -2,9 +2,20 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { SignedIn, SignedOut, useSession, useUser } from "@clerk/clerk-expo";
 import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import { useTransactions } from "../../hooks/useTransactions";
+import { useEffect } from "react";
 
 export default function Page() {
   const { user } = useUser();
+  const { transactions, summary, isLoading, loadData, deleteTransaction } =
+    useTransactions(user.id);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  console.log("transactions", transactions);
+  console.log("summary", summary);
 
   // If your user isn't appearing as signed in,
   // it's possible they have session tasks to complete.
